@@ -24,9 +24,9 @@ The project follows an architecture-first, slice-by-slice development model.
 Each slice is specified in a normative issue, translated into an executable
 implementation issue, reviewed independently, and merged.
 
-### Current State (Slice 1 — Merged)
+### Implemented Foundation: Transactional Run-Event Persistence
 
-The **transactional run-event persistence foundation** is implemented:
+The first architectural slice is merged:
 
 - SQLite-backed event store with ACID transactions (WAL mode)
 - Deterministic canonical JSON serialization and SHA-256 content digests
@@ -35,7 +35,8 @@ The **transactional run-event persistence foundation** is implemented:
 - Six-table schema: `schema_migrations`, `analysis_subjects`, `audit_runs`,
   `audit_events`, `run_state`, `idempotency_records`
 - Per-database-path process lock for safe concurrent initialization
-- 157 tests (34 persistence, 123 pre-existing)
+- Dedicated acceptance test coverage, exercised by the full repository
+  test suite
 
 Architecture: [Issue #25](https://github.com/kimeisele/agent-red-team/issues/25)
 Implementation: [PR #27](https://github.com/kimeisele/agent-red-team/pull/27)
@@ -82,7 +83,7 @@ docs/
   authority/             Charter, policy, capability manifest
   architecture/          Pipeline design, institutional architecture vision
 
-tests/                   pytest suite (157 tests)
+tests/                   pytest suite
 scripts/                 Federation utilities (setup, discovery, NADI)
 schemas/                 JSON Schema (audit request v1, audit report v1)
 .well-known/             Auto-generated federation descriptors

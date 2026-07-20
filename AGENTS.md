@@ -32,11 +32,11 @@ chat. When a decision is made, write it into the appropriate artifact.
 When interpreting project direction, apply this precedence order:
 
 1. Repository-wide security and governance policies (see `docs/authority/`)
-2. Normative architecture issues or ADRs (currently Issue #25 for Slice 1)
-3. Approved implementation issues (currently closed Issue #26 for Slice 1)
-4. Accepted PR review decisions (PR descriptions and reviewer findings)
-5. Tests and committed implementation
-6. README and descriptive documentation (human-facing orientation)
+2. Applicable normative architecture issues, ADRs, or specifications
+3. Approved implementation issues
+4. Accepted review decisions (PR descriptions and reviewer findings)
+5. Committed implementation and tests
+6. Descriptive documentation (README, AGENTS.md)
 7. Chat or agent-generated assumptions
 
 Conflicts between artifacts at different levels MUST be escalated and resolved in
@@ -101,9 +101,14 @@ exists or explicit authorization is given.
 Distinguish carefully between:
 
 - **Current implemented truth** — what the code on `main` actually does
-- **Normative desired truth** — what architecture issues say SHOULD exist
+- **Normative desired truth** — what architecture issues or specifications
+  say SHOULD exist
 - **Proposed future work** — open issues not yet approved for implementation
-- **Historical or superseded information** — closed issues and merged PRs
+- **Historical evidence** — closed issues and merged PRs are permanent records
+  of decisions and implementation. They may remain authoritative for the work
+  they governed. Closure or merge alone does not mean supersession.
+  Supersession MUST be explicit in a higher- or equal-authority repository
+  artifact.
 
 ## Engineering Workflow
 
@@ -134,7 +139,8 @@ Agents working in this repository MUST observe these boundaries:
 
 - No speculative implementation. Build only what is explicitly authorized.
 - No unrelated refactoring. Keep each PR focused on its approved scope.
-- No silent expansion into deferred capabilities (see Issue #25 deferred list).
+- No silent expansion into capabilities deferred by the applicable normative
+  authority artifact.
 - No auditing a repository without an explicit, attributable request.
 - No merge by the implementation agent unless explicitly authorized.
 - No claiming tests were run without reporting exact commands and results.
