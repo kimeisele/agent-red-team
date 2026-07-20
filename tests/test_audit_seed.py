@@ -217,9 +217,7 @@ class TestCodeSkeleton:
     """Tests that the code skeleton imports but has no audit logic."""
 
     def test_models_import(self) -> None:
-        """models.py imports cleanly."""
-        import sys
-        sys.path.insert(0, str(ROOT / "src"))
+        """models.py imports cleanly from installed package."""
         from agent_red_team.models import (
             Severity, Confidence, Finding,
         )
@@ -238,15 +236,11 @@ class TestCodeSkeleton:
         assert finding.finding_id == "F-001"
 
     def test_contracts_import(self) -> None:
-        """contracts.py imports cleanly."""
-        import sys
-        sys.path.insert(0, str(ROOT / "src"))
+        """contracts.py imports cleanly from installed package."""
         from agent_red_team.contracts import AuditModule
         assert AuditModule is not None
 
     def test_pipeline_import(self) -> None:
-        """pipeline.py imports cleanly."""
-        import sys
-        sys.path.insert(0, str(ROOT / "src"))
+        """pipeline.py imports cleanly from installed package."""
         from agent_red_team.pipeline import PipelinePhase
         assert len(list(PipelinePhase)) == 9
