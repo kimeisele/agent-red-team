@@ -1,0 +1,122 @@
+name: Audit Request
+description: Request a security audit of a Federation repository by Agent Red Team
+title: "[Audit Request] <target repository>"
+labels: ["audit-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Important
+
+        - Submitting this form **authorises only the explicitly described scope**.
+        - Destructive tests are **not permitted** by default.
+        - **Do not include secrets, tokens, or credentials** in this form.
+        - Sensitive audit requests should **not** be filed as a public issue.
+          Contact the node operator directly for confidential engagements.
+        - An audit **begins only after** the request has been accepted and validated.
+
+  - type: input
+    id: target_repository
+    attributes:
+      label: 1. Target Repository
+      description: Full `owner/repo` to be audited
+      placeholder: kimeisele/example-repo
+    validations:
+      required: true
+
+  - type: input
+    id: requester
+    attributes:
+      label: 2. Requesting Node or Operator
+      description: Attributable Federation node or human operator
+      placeholder: kimeisele/my-node or @username
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 3. Permitted Audit Scope
+      description: Files, subsystems, or concerns in scope
+      placeholder: |
+        - scripts/
+        - .github/workflows/
+        - pyproject.toml
+    validations:
+      required: true
+
+  - type: dropdown
+    id: audit_type
+    attributes:
+      label: 4. Audit Type
+      multiple: true
+      options:
+        - code-review
+        - governance-gap-analysis
+        - workflow-audit
+        - architecture-risk-assessment
+        - dependency-and-supply-chain
+        - secrets-exposure
+        - federation-contracts
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: permitted_methods
+    attributes:
+      label: 5. Permitted Non-Destructive Methods
+      options:
+        - label: Static code analysis (linting, pattern matching, unsafe-code detection)
+        - label: Workflow and permission inspection
+        - label: Governance and configuration review
+        - label: Safe, non-destructive reproduction
+        - label: Dependency and supply-chain analysis
+        - label: Federation contract validation
+    validations:
+      required: true
+
+  - type: dropdown
+    id: disclosure_channel
+    attributes:
+      label: 6. Disclosure Channel
+      description: How findings should be reported
+      options:
+        - public-issue
+        - private-security-advisory
+        - confidential-report
+    validations:
+      required: true
+
+  - type: input
+    id: point_of_contact
+    attributes:
+      label: 7. Point of Contact
+      description: Who receives findings and coordinates remediation
+      placeholder: "@username or email"
+    validations:
+      required: true
+
+  - type: input
+    id: target_ref
+    attributes:
+      label: Target Branch or Commit SHA (optional)
+      description: Specific ref to audit; defaults to default branch
+      placeholder: main or abc123
+
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Explicitly Excluded Areas (optional)
+      description: Files, subsystems, or concerns explicitly out of scope
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I confirm that submitting this form authorises only the explicitly described audit scope.
+        - label: I confirm that destructive tests are not authorised by this request.
+        - label: I understand that secrets must not be included in this public issue.
+        - label: I agree to the Audit Request and Disclosure Policy.
+    validations:
+      required: true

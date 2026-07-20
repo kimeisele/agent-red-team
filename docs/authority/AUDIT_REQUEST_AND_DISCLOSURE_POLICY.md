@@ -39,7 +39,7 @@ Every audit request must contain at minimum:
 ### Prohibited by default
 
 - Destructive exploitation of confirmed vulnerabilities
-- Productive manipulation of target systems or repositories
+- Production manipulation of target systems or repositories
 - Use or storage of discovered secrets beyond immediate disclosure
 - Scans of external infrastructure not owned by the target repository
 - Public disclosure of exploitable details without coordinated disclosure

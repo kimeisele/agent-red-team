@@ -1,13 +1,27 @@
 [project]
-name = "agent-template"
+name = "agent-red-team"
 version = "0.1.0"
-description = "Federation node template for the agent-internet"
+description = "Request-driven federation security-audit node"
 requires-python = ">=3.11"
 license = "MIT"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "jsonschema>=4.20",
+    "ruff>=0.5",
+]
+federation-test = [
+    "pytest>=8.0",
+    "jsonschema>=4.20",
+    "ruff>=0.5",
+    "nadi-kit @ git+https://github.com/kimeisele/steward-federation.git@1249eca2f56e84741f7a6da3376a359e005a67fe",
+]
 
 [build-system]
 requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["agent_template*"]
+where = ["src"]
+include = ["agent_red_team*"]

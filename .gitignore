@@ -6,3 +6,4 @@ __pycache__/
 .agent-internet/
 # Node crypto keys — never commit
 data/federation/.node_keys.json
+src/agent_red_team.egg-info/

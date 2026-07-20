@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "RPT-2026-0720-001",
+  "request_id": "REQ-2026-0720-001",
+  "target_repository": "kimeisele/example-node",
+  "target_ref": "main",
+  "audit_module": "governance",
+  "generated_at": "2026-07-20T12:00:00Z",
+  "summary": "Governance review identified one informational finding: the repository uses classic branch protection instead of repository rulesets. While not a vulnerability, migration to rulesets is recommended for consistency with Federation standards.",
+  "disclosure_classification": "public",
+  "findings": [
+    {
+      "finding_id": "F-2026-0720-001",
+      "severity": "informational",
+      "affected_location": "Repository settings: branches/main/protection",
+      "evidence": "GET /repos/kimeisele/example-node/branches/main/protection returned 200 with allow_force_pushes.enabled=false, allow_deletions.enabled=false, required_pull_request_reviews present. No repository rulesets found via GET /repos/kimeisele/example-node/rulesets.",
+      "impact": "The current classic branch protection provides equivalent security to the Federation baseline. No immediate risk. Migration to rulesets would improve auditability and enable future Federation rule standardisation.",
+      "reproduction_steps": "1. Run: gh api repos/kimeisele/example-node/branches/main/protection\n2. Observe 200 with protection fields present.\n3. Run: gh api repos/kimeisele/example-node/rulesets\n4. Observe empty array (no rulesets configured).",
+      "recommended_remediation": "Consider creating an 'agent-federation-baseline-v1' repository ruleset to replace or supplement classic branch protection. See kimeisele/agent-template for reference implementation.",
+      "confidence": "confirmed",
+      "open_uncertainties": "Whether the repository owner prefers classic protection over rulesets for operational reasons. Migration would require admin access."
+    }
+  ]
+}

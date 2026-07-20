@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "request_id": "REQ-2026-0720-001",
+  "target_repository": "kimeisele/example-node",
+  "target_ref": "main",
+  "requester": "kimeisele/example-node",
+  "scope": [
+    "scripts/",
+    ".github/workflows/",
+    "pyproject.toml"
+  ],
+  "audit_types": [
+    "governance-gap-analysis",
+    "workflow-audit"
+  ],
+  "permitted_methods": [
+    "static-analysis",
+    "workflow-inspection",
+    "governance-review"
+  ],
+  "excluded_methods": [],
+  "disclosure_channel": "public-issue",
+  "point_of_contact": "@example-operator",
+  "authorization_statement": "This request authorises Agent Red Team to audit the specified scope using only the permitted non-destructive methods listed above.",
+  "exclusions": [
+    "data/secrets/",
+    ".env"
+  ],
+  "created_at": "2026-07-20T10:00:00Z"
+}

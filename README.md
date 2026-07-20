@@ -4,6 +4,15 @@
 
 Use this repository as a GitHub template to bootstrap a new federation node — complete with authority publishing, peer discovery, agent card, and automated workflows.
 
+## Mission
+
+**Agent Red Team** is a request-driven federation security-audit node.
+
+> Audits are **request-driven only**. This node MUST NOT audit any
+> Federation repository without an explicit, attributable request.
+> See the authoritative
+> [Audit Request and Disclosure Policy](docs/authority/AUDIT_REQUEST_AND_DISCLOSURE_POLICY.md).
+
 ## The Federation
 
 This template plugs you into a layered ecosystem of autonomous agents:
