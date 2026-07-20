@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kimeisele/agent-red-team/schemas/audit-report.v1.schema.json",
+  "title": "Audit Report",
+  "description": "An evidence-backed audit report produced by Agent Red Team.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "request_id",
+    "target_repository",
+    "generated_at",
+    "summary",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Schema version identifier."
+    },
+    "report_id": {
+      "type": "string",
+      "description": "Stable unique identifier for this report.",
+      "minLength": 1
+    },
+    "request_id": {
+      "type": "string",
+      "description": "References the audit request that authorised this report.",
+      "minLength": 1
+    },
+    "target_repository": {
+      "type": "string",
+      "description": "Full owner/repo that was audited."
+    },
+    "target_ref": {
+      "type": "string",
+      "description": "Specific ref that was audited."
+    },
+    "audit_module": {
+      "type": "string",
+      "description": "Name of the audit module that produced this report."
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of report generation.",
+      "format": "date-time"
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-paragraph summary of findings.",
+      "minLength": 1
+    },
+    "disclosure_classification": {
+      "type": "string",
+      "description": "How this report may be disclosed.",
+      "enum": [
+        "public",
+        "private-security-advisory",
+        "confidential"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "description": "List of audit findings.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_id",
+          "severity",
+          "affected_location",
+          "evidence",
+          "impact",
+          "reproduction_steps",
+          "recommended_remediation",
+          "confidence"
+        ],
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "description": "Stable unique identifier for this finding.",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "description": "Severity level.",
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low",
+              "informational"
+            ]
+          },
+          "affected_location": {
+            "type": "string",
+            "description": "File path and line reference.",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "string",
+            "description": "Reproducible observations, tool output, or configuration excerpts.",
+            "minLength": 1
+          },
+          "impact": {
+            "type": "string",
+            "description": "What an attacker or failure could achieve.",
+            "minLength": 1
+          },
+          "reproduction_steps": {
+            "type": "string",
+            "description": "Step-by-step to verify the finding. Must not require destructive actions.",
+            "minLength": 1
+          },
+          "recommended_remediation": {
+            "type": "string",
+            "description": "Concrete, actionable fix.",
+            "minLength": 1
+          },
+          "confidence": {
+            "type": "string",
+            "description": "Confidence level of the finding.",
+            "enum": [
+              "confirmed",
+              "likely",
+              "possible"
+            ]
+          },
+          "open_uncertainties": {
+            "type": "string",
+            "description": "Unresolved questions or assumptions."
+          }
+        }
+      }
+    }
+  }
+}
