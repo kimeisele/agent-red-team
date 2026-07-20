@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = REPO_ROOT / "scripts"
 
@@ -80,11 +82,8 @@ def test_capabilities_json_valid() -> None:
 
 
 def test_nadi_kit_import() -> None:
-    """nadi_kit can be imported and exposes expected API."""
-    import importlib
-
-    # Import from installed nadi-kit package
-    nadi_kit = importlib.import_module("nadi_kit")
+    """nadi_kit can be imported and exposes expected API (optional Federation integration)."""
+    nadi_kit = pytest.importorskip("nadi_kit", reason="optional Federation dependency nadi-kit not installed")
 
     assert hasattr(nadi_kit, "NadiNode")
     assert hasattr(nadi_kit, "NadiMessage")
@@ -93,8 +92,9 @@ def test_nadi_kit_import() -> None:
 
 
 def test_nadi_node_from_peer_json(tmp_path: Path) -> None:
-    """NadiNode can be created from a peer.json file."""
-    from nadi_kit import NadiNode
+    """NadiNode can be created from a peer.json file (optional Federation integration)."""
+    nadi_kit = pytest.importorskip("nadi_kit", reason="optional Federation dependency nadi-kit not installed")
+    NadiNode = nadi_kit.NadiNode
 
     peer_data = {
         "identity": {
@@ -124,8 +124,9 @@ def test_nadi_node_from_peer_json(tmp_path: Path) -> None:
 
 
 def test_nadi_node_emit_and_receive(tmp_path: Path) -> None:
-    """NadiNode can emit messages and read them back from transport."""
-    from nadi_kit import NadiNode
+    """NadiNode can emit messages and read them back from transport (optional Federation integration)."""
+    nadi_kit = pytest.importorskip("nadi_kit", reason="optional Federation dependency nadi-kit not installed")
+    NadiNode = nadi_kit.NadiNode
 
     peer_data = {
         "identity": {"city_id": "emit-test"},
