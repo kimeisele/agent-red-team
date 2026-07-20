@@ -70,11 +70,12 @@ class EventRepository:
         self._db_path = Path(db_path)
         self._lock = _get_path_lock(self._db_path)
 
-        conn = connect(self._db_path)
-        try:
-            apply_migration(conn)
-        finally:
-            conn.close()
+        with self._lock:
+            conn = connect(self._db_path)
+            try:
+                apply_migration(conn)
+            finally:
+                conn.close()
 
     # ------------------------------------------------------------------
     # Public API (single normative operation)

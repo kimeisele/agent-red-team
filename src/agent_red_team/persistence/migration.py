@@ -4,9 +4,8 @@ Creates the six approved Slice-1 tables and indexes inside a single
 explicit ``BEGIN IMMEDIATE … COMMIT`` transaction.  Application is
 idempotent: re-running on an already-migrated database is safe.
 
-If any DDL statement fails, the entire migration rolls back and no
-Slice-1 objects remain (fresh database) or the existing objects are
-unchanged (pre-existing database).
+The authoritative version check is performed inside the write transaction
+to avoid TOCTOU races between concurrent initializers.
 """
 
 from __future__ import annotations
@@ -100,11 +99,13 @@ CREATE TABLE IF NOT EXISTS idempotency_records (
 """
 
 _CREATE_INDEX_EVENTS_RUN = """
-CREATE INDEX idx_audit_events_run ON audit_events(audit_run_id);
+CREATE INDEX IF NOT EXISTS idx_audit_events_run
+ON audit_events(audit_run_id);
 """
 
 _CREATE_INDEX_EVENTS_CORRELATION = """
-CREATE INDEX idx_audit_events_correlation ON audit_events(correlation_id);
+CREATE INDEX IF NOT EXISTS idx_audit_events_correlation
+ON audit_events(correlation_id);
 """
 
 # Ordered — dependencies require this sequence.
@@ -119,7 +120,6 @@ _STATEMENTS: list[tuple[str, str]] = [
     ("idx_audit_events_correlation", _CREATE_INDEX_EVENTS_CORRELATION),
 ]
 
-# Tables only (no indexes) — for T-18 partial-failure checks.
 _TABLE_NAMES = [
     "schema_migrations",
     "analysis_subjects",
@@ -134,14 +134,19 @@ _INDEX_NAMES = ["idx_audit_events_run", "idx_audit_events_correlation"]
 def apply(conn: sqlite3.Connection) -> None:
     """Apply migration version 1 inside ``BEGIN IMMEDIATE … COMMIT``.
 
-    Idempotent — safe to call on an already-migrated database.
+    The authoritative version check is performed inside the write
+    transaction.  No preflight check outside the transaction — this
+    prevents TOCTOU races when two ``EventRepository`` instances
+    initialise concurrently against the same fresh database.
 
-    On any failure the transaction is rolled back.  For a fresh database
-    this means no Slice-1 objects remain.  For a pre-existing database the
-    pre-existing objects are unchanged.
+    Idempotent — safe to call on an already-migrated database.
     """
-    # Fast idempotency check — requires schema_migrations table.
+    conn.execute("BEGIN IMMEDIATE")
     try:
+        # 1. Ensure schema_migrations exists (idempotent).
+        conn.execute(_CREATE_SCHEMA_MIGRATIONS)
+
+        # 2. Authoritative version check inside the transaction.
         cur = conn.execute(
             "SELECT 1 FROM schema_migrations WHERE version = ?",
             (_MIGRATION_VERSION,),
@@ -149,16 +154,14 @@ def apply(conn: sqlite3.Connection) -> None:
         if cur.fetchone() is not None:
             logger.debug("Migration v%d already applied — skipping",
                          _MIGRATION_VERSION)
+            conn.commit()
             return
-    except sqlite3.OperationalError:
-        # schema_migrations table does not exist yet — proceed.
-        pass
 
-    conn.execute("BEGIN IMMEDIATE")
-    try:
-        for _name, ddl in _STATEMENTS:
+        # 3. Create remaining tables + indexes.
+        for _name, ddl in _STATEMENTS[1:]:
             conn.execute(ddl)
 
+        # 4. Record migration version.
         conn.execute(
             "INSERT INTO schema_migrations (version, name, applied_at) "
             "VALUES (?, ?, ?)",
@@ -168,6 +171,7 @@ def apply(conn: sqlite3.Connection) -> None:
                 utc_timestamp(),
             ),
         )
+
         conn.commit()
     except Exception:
         conn.rollback()

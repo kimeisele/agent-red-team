@@ -940,3 +940,69 @@ class TestCommitStartedFlag:
             assert cur is None, "rolled-back INSERT should not persist"
         finally:
             conn2.close()
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Concurrent initialization test
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class TestConcurrentInitialization:
+    """Two EventRepository instances constructed concurrently on a fresh
+    database must both succeed without errors, and produce exactly one
+    migration version-1 record."""
+
+    SLICE1_TABLES = [
+        "schema_migrations", "analysis_subjects", "audit_runs",
+        "audit_events", "run_state", "idempotency_records",
+    ]
+    SLICE1_INDEXES = [
+        "idx_audit_events_run", "idx_audit_events_correlation",
+    ]
+
+    def test_concurrent_init_succeeds(self):
+        import tempfile
+
+        tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+        tmp.close()
+        db_path = Path(tmp.name)
+
+        errors: list[Exception] = []
+        repos: list[EventRepository] = []
+        barrier = threading.Barrier(2, timeout=5)
+
+        def _worker():
+            try:
+                barrier.wait()
+                repos.append(EventRepository(db_path))
+            except Exception as exc:
+                errors.append(exc)
+
+        t1 = threading.Thread(target=_worker)
+        t2 = threading.Thread(target=_worker)
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+        assert len(errors) == 0, f"errors: {errors}"
+        assert len(repos) == 2
+
+        # Verify exactly one migration record.
+        conn = production_connect(db_path)
+        try:
+            assert _count(conn, "schema_migrations") == 1
+            # All six approved tables exist.
+            tables = {r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()}
+            for t in self.SLICE1_TABLES:
+                assert t in tables, f"table {t!r} missing"
+            # Both approved indexes exist.
+            indexes = {r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='index'"
+            ).fetchall()}
+            for i in self.SLICE1_INDEXES:
+                assert i in indexes, f"index {i!r} missing"
+        finally:
+            conn.close()
