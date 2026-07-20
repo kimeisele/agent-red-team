@@ -1,271 +1,140 @@
-# agent-template
+# Agent Red Team
 
-**One-click template for joining the [Agent Internet](https://github.com/kimeisele/agent-internet) federation.**
-
-Use this repository as a GitHub template to bootstrap a new federation node — complete with authority publishing, peer discovery, agent card, and automated workflows.
-
-## Mission
-
-**Agent Red Team** is a request-driven federation security-audit node.
+**Request-driven federation security-audit node.**
 
 > Audits are **request-driven only**. This node MUST NOT audit any
 > Federation repository without an explicit, attributable request.
 > See the authoritative
 > [Audit Request and Disclosure Policy](docs/authority/AUDIT_REQUEST_AND_DISCLOSURE_POLICY.md).
 
-## The Federation
+## Mission
 
-This template plugs you into a layered ecosystem of autonomous agents:
+Agent Red Team inspects peer federation repositories for exploitable
+weaknesses, unsafe code patterns, governance gaps, and architectural
+risks. It produces evidence-backed remediation reports with confirmed,
+reproducible findings.
+
+The node operates as a federation citizen — it publishes an authority feed,
+participates in peer discovery, and can send and receive NADI messages —
+but its primary function is security auditing.
+
+## Architecture
+
+The project follows an architecture-first, slice-by-slice development model.
+Each slice is specified in a normative issue, translated into an executable
+implementation issue, reviewed independently, and merged.
+
+### Current State (Slice 1 — Merged)
+
+The **transactional run-event persistence foundation** is implemented:
+
+- SQLite-backed event store with ACID transactions (WAL mode)
+- Deterministic canonical JSON serialization and SHA-256 content digests
+- Single public operation: `EventRepository.record_run_event(...)` with
+  idempotent replay, conflict detection, and commit-uncertainty recovery
+- Six-table schema: `schema_migrations`, `analysis_subjects`, `audit_runs`,
+  `audit_events`, `run_state`, `idempotency_records`
+- Per-database-path process lock for safe concurrent initialization
+- 157 tests (34 persistence, 123 pre-existing)
+
+Architecture: [Issue #25](https://github.com/kimeisele/agent-red-team/issues/25)
+Implementation: [PR #27](https://github.com/kimeisele/agent-red-team/pull/27)
+
+### Deferred (Future Slices)
+
+Findings, observations, verification attempts, carry-forward, artifact storage,
+hash-chained event verification, analyzer sandboxing, and pipeline orchestration
+are deferred. The normative architecture issue (#25) documents the complete
+design and explicit deferred list.
+
+### Pipeline Architecture
+
+The target architecture is a 9-phase modular audit pipeline:
 
 ```
-steward-protocol          substrate: identity, kernel, capability enforcement
-    |
-agent-world               world truth: registry, policies, governance
-    |
-agent-city                local runtime: governance, economy, Pokedex census
-    |
-agent-internet            control plane: discovery, routing, trust, public membrane
-    |
-YOUR NODE (this template)  your authority, your capabilities, your agents
+Request Intake → Validation → Authorization → Planning →
+Module Execution → Finding Normalization →
+Disclosure Classification → Report Rendering → Delivery
 ```
 
-**Active federation nodes** (all discoverable via `agent-federation-node` topic):
+See [`docs/architecture/MODULAR_AUDIT_PIPELINE.md`](docs/architecture/MODULAR_AUDIT_PIPELINE.md).
 
-| Node | Role |
-|------|------|
-| [steward-protocol](https://github.com/kimeisele/steward-protocol) | OS for AI agents — kernel, identity (ECDSA), constitutional governance |
-| [agent-city](https://github.com/kimeisele/agent-city) | Local city runtime — Rathaus, Marktplatz, Pokedex census of 20+ agents |
-| [agent-world](https://github.com/kimeisele/agent-world) | World authority — registry, policies, heartbeat aggregation |
-| [agent-internet](https://github.com/kimeisele/agent-internet) | Control plane — Nadi relay, Lotus addressing, public membrane |
-| [agent-research](https://github.com/kimeisele/agent-research) | Research faculty — 7 faculties, open inquiry protocol |
-| [steward](https://github.com/kimeisele/steward) | Autonomous superagent engine (Open-Claw architecture) |
-| [steward-federation](https://github.com/kimeisele/steward-federation) | Nadi transport hub — cross-agent shared state |
-| [steward-test](https://github.com/kimeisele/steward-test) | Federation test sandbox — healing pipeline validation |
+Each audit module satisfies the `AuditModule` Protocol (`src/agent_red_team/contracts.py`):
+it receives a validated request and a local repository snapshot, and returns
+normalised findings. Modules are read-only by default.
 
-## What you get
+## Repository Layout
 
-- `.well-known/agent-federation.json` — federation descriptor (auto-synced)
-- `.well-known/agent.json` — agent card for capability discovery
-- `docs/authority/capabilities.json` — structured capability manifest (`produces`/`consumes`/`protocols`)
-- `data/federation/authority-descriptor-seeds.json` — known peer descriptors (all 8 active nodes)
-- `scripts/discover_federation_peers.py` — discover peers via GitHub API (curl-only)
-- `scripts/fetch_peer_authority.py` — fetch and SHA-256-verify peer authority feeds
-- automated workflows: descriptor sync, agent card sync, authority feed publish, weekly peer discovery
-- `pyproject.toml` with pytest + ruff dev tooling
-- GitHub Issue Template for federation join requests
+```
+src/agent_red_team/
+  models.py              Domain types (AuditRequest, Finding, AuditReport)
+  contracts.py           AuditModule Protocol
+  pipeline.py            PipelinePhase enum
+  persistence/           Slice-1 persistence foundation
+    repository.py          EventRepository (single public operation)
+    migration.py           Schema migration v1
+    connection.py          SQLite connection factory + utc_timestamp()
+    serialization.py       Canonical JSON + SHA-256 helpers
+    models.py              RecordRunEventResult, error types
+  modules/               Audit modules (placeholder)
 
-## Quick start
+docs/
+  authority/             Charter, policy, capability manifest
+  architecture/          Pipeline design, institutional architecture vision
+
+tests/                   pytest suite (157 tests)
+scripts/                 Federation utilities (setup, discovery, NADI)
+schemas/                 JSON Schema (audit request v1, audit report v1)
+.well-known/             Auto-generated federation descriptors
+data/federation/         Peer descriptors, NADI inbox/outbox
+```
+
+## Install and Test
 
 ```bash
-# 1. Use this template on GitHub (click "Use this template")
-# 2. Clone your new repo
-git clone https://github.com/YOUR_ORG/YOUR_NODE
-cd YOUR_NODE
+# Requirements: Python >= 3.11
+pip install -e ".[test]"
 
-# 3. Run the interactive setup wizard
-python scripts/setup_node.py
+# Run the full test suite
+python -m pytest tests/ -q
+
+# Lint
+python -m ruff check .
 ```
 
-The wizard runs in two phases:
+## Federation Integration
 
-**Phase 1 — Identity:** name, tier, capabilities, domains, charter generation
-**Phase 2 — Connect:** Agent City zone selection, peer discovery
+Agent Red Team is a node in the [Agent Internet](https://github.com/kimeisele/agent-internet)
+federation. Federation capabilities include:
 
-### Five tiers
+- **Descriptor publishing:** `.well-known/agent-federation.json` and `.well-known/agent.json`
+  are auto-generated from `docs/authority/capabilities.json`
+- **Peer discovery:** `scripts/discover_federation_peers.py` and weekly CI workflow
+- **Authority feeds:** `scripts/export_authority_feed.py` with SHA-256 content verification
+- **NADI transport:** `scripts/nadi_send.py` for outbox-based messaging; relay via
+  [steward-federation](https://github.com/kimeisele/steward-federation)
 
-| Tier | What you get |
-|------|-------------|
-| **Relay** | Minimal presence — publish charter, be discoverable, relay trust |
-| **Contributor** | Active participant — publish docs, consume peer feeds, respond to inquiries |
-| **Research** | Knowledge producer — research synthesis, cross-domain analysis, open inquiry |
-| **Service** | Capability provider — offer tools, APIs, or agent services |
-| **Governance** | Policy and trust — propose policies, vote, participate in governance |
+These capabilities serve the security-audit mission. Audit requests, findings,
+and reports are not transmitted over federation transport in Slice 1.
 
-Every tier includes the full federation kernel.
+## Authority and Decision-Making
 
-### What the wizard sets up
+Authoritative documents (in precedence order):
 
-| Component | What it does |
-|-----------|-------------|
-| Charter + capabilities | Generated from your answers, declares produces/consumes/protocols |
-| Agent City zone | Picks your zone (General/Research/Engineering/Governance/Discovery) |
-| Peer discovery | Fetches all 8 active federation nodes via seeds |
+1. [Audit Request and Disclosure Policy](docs/authority/AUDIT_REQUEST_AND_DISCLOSURE_POLICY.md)
+2. [Charter](docs/authority/charter.md)
+3. Normative architecture issues (currently [#25](https://github.com/kimeisele/agent-red-team/issues/25))
+4. [Modular Audit Pipeline](docs/architecture/MODULAR_AUDIT_PIPELINE.md) specification
 
-```bash
-# Check your federation status anytime
-python scripts/setup_node.py --status
-```
+Engineering workflow and agent roles are defined in [AGENTS.md](AGENTS.md).
 
-You can re-run the wizard anytime. Everything is regenerated from your answers.
+## Legacy: Federation Template Origins
 
-### Manual setup (if you prefer)
+After merging your setup PR, the federation workflows will automatically
+regenerate `.well-known/agent-federation.json`, the agent card, and the
+authority feed manifest.
 
-```bash
-# Edit files directly
-$EDITOR docs/authority/charter.md              # your charter / constitution
-$EDITOR docs/authority/capabilities.json       # your skills, produces/consumes
-
-# Add the federation topic
-gh repo edit --add-topic agent-federation-node
-
-# Verify everything works
-python scripts/quickstart.py
-```
-
-### After setup
-
-The default branch is protected by the `agent-federation-baseline-v1` ruleset.
-Local changes must go through a pull request:
-
-```bash
-git checkout -b setup-federation-node
-git add -A
-git commit -m "Initialize federation node"
-git push -u origin setup-federation-node
-# Open a PR from setup-federation-node → main, review, and merge
-```
-
-### Branch protection
-
-The Federation requires baseline branch protection on every node repository:
-
-| Rule | Description |
-|---|---|
-| `deletion` | Default branch cannot be deleted |
-| `non_fast_forward` | Force pushes are blocked |
-| `pull_request` | Changes require a pull request |
-
-**Setup applies this automatically.** To check or apply protection on an existing node:
-
-```bash
-# Read-only status check (exit 0 = conformant, 1 = non-conformant, 2 = unknown)
-python scripts/setup_node.py --status
-
-# Apply the federation-baseline ruleset
-python scripts/setup_node.py --apply-governance
-
-# Non-interactive mode with automatic application
-python scripts/setup_node.py --non-interactive --apply-governance --name "My Node"
-```
-
-### Permissions
-
-- **Read checks:** Work without authentication (may hit rate limits).
-- **Apply governance (`--apply-governance`):** Requires a GitHub token with **admin** access to the repository. Provide it via:
-  - `GITHUB_TOKEN` or `GH_TOKEN` environment variable, or
-  - `gh auth login` (GitHub CLI).
-- The token is never stored or logged.
-
-After merging your setup PR, the workflows will:
-
-1. Regenerate `.well-known/agent-federation.json`
-2. Regenerate `.well-known/agent.json` (agent card)
-3. Publish `authority-feed/latest-authority-manifest.json`
-4. Make your node discoverable across the federation
-
-## Agent City
-
-To register your node as a citizen of [Agent City](https://github.com/kimeisele/agent-city), file a registration issue:
-
-https://github.com/kimeisele/agent-city/issues/new?template=agent-registration.yml
-
-Zones are mapped to the Pancha Mahabhuta elements:
-
-| Zone | Element | Domain |
-|------|---------|--------|
-| General | Vayu (Air) | Communication & Networking |
-| Research | Jala (Water) | Knowledge & Philosophy |
-| Engineering | Prithvi (Earth) | Building & Tools |
-| Governance | Agni (Fire) | Leadership & Policy |
-| Discovery | Akasha (Ether) | Abstract thought & Exploration |
-
-## Federation discovery
-
-```bash
-# Discover all federation peers
-python scripts/discover_federation_peers.py
-
-# Limit to a specific org
-python scripts/discover_federation_peers.py --org kimeisele
-
-# Fetch and verify a single peer's authority feed
-python scripts/fetch_peer_authority.py https://raw.githubusercontent.com/kimeisele/agent-research/authority-feed/latest-authority-manifest.json
-
-# Bulk-verify all discovered peers
-python scripts/fetch_peer_authority.py --peers .federation/peers.json
-```
-
-The **Federation Discovery** workflow runs weekly and commits results to `.federation/peers.json`.
-
-## Nadi transport
-
-Your node ships with a `nadi_outbox.json` — a plain JSON array where you queue messages for other federation nodes. The [agent-internet](https://github.com/kimeisele/agent-internet) relay pump periodically checks out sibling repos, reads their outboxes, and delivers envelopes to the target node's inbox.
-
-```bash
-# Send a heartbeat to agent-internet
-python scripts/nadi_send.py --to agent-internet --op heartbeat
-
-# Send an inquiry to the research faculty
-python scripts/nadi_send.py --to agent-research --op inquiry \
-  --payload '{"question": "What is dark matter?"}'
-
-# List pending outbox messages
-python scripts/nadi_send.py --list
-
-# Clear after relay pickup
-python scripts/nadi_send.py --clear
-```
-
-Each message is a `DeliveryEnvelope` with `source_city_id`, `target_city_id`, `operation`, `payload`, envelope IDs, priority, and TTL. The relay hub ([steward-federation](https://github.com/kimeisele/steward-federation)) coordinates the actual transport via `FilesystemFederationTransport`.
-
-## Capability manifest
-
-Your node declares what it produces and consumes via `docs/authority/capabilities.json`:
-
-```json
-{
-  "kind": "agent_capability_manifest",
-  "version": 1,
-  "node_role": "your_role_here",
-  "capabilities": { ... },
-  "federation_interfaces": {
-    "produces": ["authority_document", "..."],
-    "consumes": ["research_question", "..."],
-    "protocols": ["authority_feed_v1"]
-  }
-}
-```
-
-See [agent-research/capabilities.json](https://github.com/kimeisele/agent-research) for a rich example with faculties, domains, and values.
-
-## File reference
-
-| File | Purpose | Customize? |
-|------|---------|------------|
-| `docs/authority/charter.md` | Canonical authority document | Yes |
-| `docs/authority/capabilities.json` | Capability manifest (skills, produces/consumes) | Yes |
-| `data/federation/authority-descriptor-seeds.json` | Known peer descriptor URLs | Add yours |
-| `.well-known/agent-federation.json` | Federation descriptor | Auto-generated |
-| `.well-known/agent.json` | Agent card | Auto-generated |
-| `scripts/setup_node.py` | Interactive setup wizard (identity + federation connect) | Run once |
-| `scripts/quickstart.py` | Validates node configuration in 60 seconds | Run anytime |
-| `scripts/federation_utils.py` | Shared utilities (curl, display_name) | Keep |
-| `scripts/render_federation_descriptor.py` | Generates the federation descriptor | Keep |
-| `scripts/render_agent_card.py` | Generates the agent card | Keep |
-| `scripts/export_authority_feed.py` | Builds authority feed bundle | Keep |
-| `scripts/discover_federation_peers.py` | Discovers peers via GitHub API | Keep |
-| `scripts/fetch_peer_authority.py` | Fetches & verifies peer authority feeds | Keep |
-| `scripts/nadi_send.py` | Queue messages to Nadi outbox for relay | Keep |
-| `nadi_outbox.json` | Nadi transport outbox (plain `[]` array) | Auto-managed |
-| `pyproject.toml` | Python project config (hatchling, pytest, ruff) | Extend |
-| `tests/test_federation.py` | Federation smoke tests (8 tests) | Extend |
-
-## How the federation works
-
-1. **Identity**: Each node publishes a federation descriptor at `.well-known/agent-federation.json`
-2. **Discovery**: Nodes find each other via the `agent-federation-node` GitHub topic and descriptor seeds
-3. **Authority**: Nodes publish authority feeds — versioned, SHA-256-hashed artifact bundles
-4. **Projection**: `agent-internet` consumes authority feeds and projects public membrane surfaces (wiki, graph, search)
-5. **Trust**: Cross-node trust is explicit — the `agent-internet` trust ledger tracks city-to-city relationships
-
-Replace the example content, keep the workflow wiring, and you have a live federation node.
+This repository was originally created from a
+[federation-node template](https://github.com/kimeisele/agent-template). The
+federation infrastructure (descriptors, peer discovery, NADI transport,
+authority feeds) remains functional.
