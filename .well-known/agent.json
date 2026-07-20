@@ -3,25 +3,36 @@
     "pushNotifications": false,
     "streaming": false
   },
-  "description": "Agent Template \u2014 a federation node",
+  "description": "Federation security-audit node that inspects peer repositories for exploitable weaknesses, unsafe code patterns, governance gaps, and architectural risks, then produces evidence-backed remediation reports.",
   "federation": {
     "authority_feed_branch": "authority-feed",
     "descriptor_path": ".well-known/agent-federation.json",
     "interfaces": {
-      "consumes": [],
+      "consumes": [
+        "research_question",
+        "raw_data_feed",
+        "domain_observation",
+        "inquiry_request",
+        "peer_review_challenge"
+      ],
       "produces": [
         "authority_document",
-        "canonical_surface"
+        "research_synthesis",
+        "cross_domain_report",
+        "meta_analysis_report",
+        "open_dataset"
       ],
       "protocols": [
-        "authority_feed_v1"
+        "authority_feed_v1",
+        "open_inquiry_v1",
+        "peer_review_v1"
       ]
     },
-    "node_role": "agent_template_relay",
+    "node_role": "agent_red_team_research",
     "node_topic": "agent-federation-node",
     "peer_discovery": true
   },
-  "name": "Agent Template",
+  "name": "Agent Red Team",
   "provider": {
     "organization": "kimeisele"
   },
@@ -30,6 +41,21 @@
       "description": "Authority Publishing capability.",
       "id": "authority-publishing",
       "name": "Authority Publishing"
+    },
+    {
+      "description": "Research Synthesis capability.",
+      "id": "research-synthesis",
+      "name": "Research Synthesis"
+    },
+    {
+      "description": "Cross Domain Analysis capability.",
+      "id": "cross-domain-analysis",
+      "name": "Cross Domain Analysis"
+    },
+    {
+      "description": "Open Inquiry capability.",
+      "id": "open-inquiry",
+      "name": "Open Inquiry"
     }
   ],
   "url": "https://github.com/kimeisele/agent-red-team",
