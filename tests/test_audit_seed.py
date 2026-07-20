@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
+from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMAS = ROOT / "schemas"
@@ -23,42 +23,52 @@ def _load_json(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
-# ── Schema tests ───────────────────────────────────────────────────────────
+_REQUEST_SCHEMA = _load_json(SCHEMAS / "audit-request.v1.schema.json")
+_REPORT_SCHEMA = _load_json(SCHEMAS / "audit-report.v1.schema.json")
+_REQUEST_VALIDATOR = Draft202012Validator(_REQUEST_SCHEMA)
+_REPORT_VALIDATOR = Draft202012Validator(_REPORT_SCHEMA)
+
+
+def _errors(validator: Draft202012Validator, instance: dict) -> list[str]:
+    return [e.message for e in validator.iter_errors(instance)]
+
+
+# ── Schema validation tests ────────────────────────────────────────────────
 
 
 class TestAuditRequestSchema:
-    """Tests for audit-request.v1.schema.json."""
+    """Real JSON Schema validation for audit-request.v1.schema.json."""
 
     def test_valid_example_validates(self) -> None:
-        """The example audit request matches the schema."""
+        """The example audit request validates against the schema."""
         request = _load_json(EXAMPLES / "audit-request.example.json")
-        assert request["schema_version"] == "1.0.0"
-        assert request["target_repository"] == "kimeisele/example-node"
-        # All 11 required fields present
-        required = [
-            "schema_version", "request_id", "target_repository",
-            "requester", "scope", "audit_types", "permitted_methods",
-            "disclosure_channel", "point_of_contact",
-            "authorization_statement", "created_at",
-        ]
-        for field in required:
-            assert field in request, f"Missing required field: {field}"
+        errs = _errors(_REQUEST_VALIDATOR, request)
+        assert not errs, f"Unexpected validation errors: {errs}"
 
-    def test_missing_required_field_rejected(self) -> None:
-        """A request missing target_repository is invalid."""
+    def test_missing_target_repository_rejected(self) -> None:
+        """Request without target_repository fails validation."""
         request = _load_json(EXAMPLES / "audit-request.example.json")
         del request["target_repository"]
-        assert "target_repository" not in request
+        errs = _errors(_REQUEST_VALIDATOR, request)
+        assert errs
 
     def test_invalid_disclosure_channel_rejected(self) -> None:
-        """An invalid disclosure_channel value is not in the enum."""
-        valid_channels = {"public-issue", "private-security-advisory", "confidential-report"}
-        assert "invalid-channel" not in valid_channels
+        """Request with invalid disclosure_channel fails validation."""
+        request = _load_json(EXAMPLES / "audit-request.example.json")
+        request["disclosure_channel"] = "invalid-channel"
+        errs = _errors(_REQUEST_VALIDATOR, request)
+        assert errs
+
+    def test_unknown_additional_property_rejected(self) -> None:
+        """Request with unknown additional field fails validation."""
+        request = _load_json(EXAMPLES / "audit-request.example.json")
+        request["unknown_field"] = "should be rejected"
+        errs = _errors(_REQUEST_VALIDATOR, request)
+        assert errs
 
     def test_no_secret_fields_in_schema(self) -> None:
-        """The schema must not have secret-like fields."""
-        schema = _load_json(SCHEMAS / "audit-request.v1.schema.json")
-        props = schema.get("properties", {})
+        """The schema must not have secret-like field names."""
+        props = _REQUEST_SCHEMA.get("properties", {})
         secretish = {"token", "secret", "password", "api_key", "credential", "private_key"}
         for key in props:
             for s in secretish:
@@ -66,37 +76,55 @@ class TestAuditRequestSchema:
 
 
 class TestAuditReportSchema:
-    """Tests for audit-report.v1.schema.json."""
+    """Real JSON Schema validation for audit-report.v1.schema.json."""
 
     def test_valid_example_validates(self) -> None:
-        """The example audit report matches the schema."""
+        """The example audit report validates against the schema."""
         report = _load_json(EXAMPLES / "audit-report.example.json")
-        assert report["schema_version"] == "1.0.0"
-        assert report["request_id"] == "REQ-2026-0720-001"
-        assert len(report["findings"]) >= 1
-        finding = report["findings"][0]
-        required = [
-            "finding_id", "severity", "affected_location", "evidence",
-            "impact", "reproduction_steps", "recommended_remediation",
-            "confidence",
-        ]
-        for field in required:
-            assert field in finding, f"Missing required field in finding: {field}"
+        errs = _errors(_REPORT_VALIDATOR, report)
+        assert not errs, f"Unexpected validation errors: {errs}"
+
+    def test_missing_request_id_rejected(self) -> None:
+        """Report without request_id fails validation."""
+        report = _load_json(EXAMPLES / "audit-report.example.json")
+        del report["request_id"]
+        errs = _errors(_REPORT_VALIDATOR, report)
+        assert errs
+
+    def test_finding_without_evidence_rejected(self) -> None:
+        """Finding without evidence fails validation."""
+        report = _load_json(EXAMPLES / "audit-report.example.json")
+        del report["findings"][0]["evidence"]
+        errs = _errors(_REPORT_VALIDATOR, report)
+        assert errs
+
+    def test_finding_without_open_uncertainties_rejected(self) -> None:
+        """Finding without open_uncertainties fails validation."""
+        report = _load_json(EXAMPLES / "audit-report.example.json")
+        del report["findings"][0]["open_uncertainties"]
+        errs = _errors(_REPORT_VALIDATOR, report)
+        assert errs
 
     def test_invalid_severity_rejected(self) -> None:
-        """An invalid severity value is not in the enum."""
-        valid = {"critical", "high", "medium", "low", "informational"}
-        assert "unknown" not in valid
-
-    def test_finding_without_evidence_invalid(self) -> None:
-        """A finding without evidence is incomplete."""
-        finding = _load_json(EXAMPLES / "audit-report.example.json")["findings"][0]
-        assert finding["evidence"], "Evidence must be non-empty"
-
-    def test_report_without_request_correlation_invalid(self) -> None:
-        """A report without request_id correlation is incomplete."""
+        """Finding with invalid severity fails validation."""
         report = _load_json(EXAMPLES / "audit-report.example.json")
-        assert report["request_id"], "request_id must be present for correlation"
+        report["findings"][0]["severity"] = "unknown"
+        errs = _errors(_REPORT_VALIDATOR, report)
+        assert errs
+
+    def test_missing_disclosure_classification_rejected(self) -> None:
+        """Report without disclosure_classification fails validation."""
+        report = _load_json(EXAMPLES / "audit-report.example.json")
+        del report["disclosure_classification"]
+        errs = _errors(_REPORT_VALIDATOR, report)
+        assert errs
+
+    def test_unknown_finding_property_rejected(self) -> None:
+        """Finding with unknown additional field fails validation."""
+        report = _load_json(EXAMPLES / "audit-report.example.json")
+        report["findings"][0]["unknown_field"] = "should be rejected"
+        errs = _errors(_REPORT_VALIDATOR, report)
+        assert errs
 
 
 # ── Template tests ─────────────────────────────────────────────────────────
@@ -193,8 +221,7 @@ class TestCodeSkeleton:
         import sys
         sys.path.insert(0, str(ROOT / "src"))
         from agent_red_team.models import (
-            Severity, Confidence, DisclosureClassification,
-            AuditType, AuditMethod, AuditRequest, Finding, AuditReport,
+            Severity, Confidence, Finding,
         )
         # Can instantiate
         finding = Finding(
@@ -206,6 +233,7 @@ class TestCodeSkeleton:
             reproduction_steps="n/a",
             recommended_remediation="n/a",
             confidence=Confidence.POSSIBLE,
+            open_uncertainties="",
         )
         assert finding.finding_id == "F-001"
 

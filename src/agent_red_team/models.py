@@ -80,7 +80,7 @@ class Finding:
     reproduction_steps: str
     recommended_remediation: str
     confidence: Confidence
-    open_uncertainties: str | None = None
+    open_uncertainties: str
 
 
 @dataclass
@@ -94,6 +94,6 @@ class AuditReport:
     generated_at: str
     summary: str
     findings: list[Finding]
+    disclosure_classification: DisclosureClassification
     target_ref: str | None = None
     audit_module: str | None = None
-    disclosure_classification: DisclosureClassification | None = None

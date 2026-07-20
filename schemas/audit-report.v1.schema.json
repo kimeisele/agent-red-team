@@ -12,6 +12,7 @@
     "target_repository",
     "generated_at",
     "summary",
+    "disclosure_classification",
     "findings"
   ],
   "properties": {
@@ -75,7 +76,8 @@
           "impact",
           "reproduction_steps",
           "recommended_remediation",
-          "confidence"
+          "confidence",
+          "open_uncertainties"
         ],
         "properties": {
           "finding_id": {
