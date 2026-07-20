@@ -15,7 +15,7 @@ federation-test = [
     "pytest>=8.0",
     "jsonschema>=4.20",
     "ruff>=0.5",
-    "nadi-kit @ git+https://github.com/kimeisele/steward-federation.git",
+    "nadi-kit @ git+https://github.com/kimeisele/steward-federation.git@1249eca2f56e84741f7a6da3376a359e005a67fe",
 ]
 
 [build-system]
