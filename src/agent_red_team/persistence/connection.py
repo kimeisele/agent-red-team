@@ -8,6 +8,7 @@ connections only to prove why these pragmas are required.
 from __future__ import annotations
 
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -15,6 +16,16 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 _BUSY_TIMEOUT_MS = 5000
+
+
+def utc_timestamp() -> str:
+    """Return the current UTC time as ``YYYY-MM-DDTHH:MM:SSZ``.
+
+    No microseconds, no timezone offset — exact Z suffix.
+    """
+    return datetime.now(timezone.utc).replace(microsecond=0).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
 
 
 def connect(db_path: str | Path) -> sqlite3.Connection:

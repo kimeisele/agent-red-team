@@ -1,14 +1,20 @@
 """Schema migration — version 1 only.
 
 Creates the six approved Slice-1 tables and indexes inside a single
-transaction.  Application is idempotent: re-running on an already-migrated
-database is safe and does not re-create existing objects.
+explicit ``BEGIN IMMEDIATE … COMMIT`` transaction.  Application is
+idempotent: re-running on an already-migrated database is safe.
+
+If any DDL statement fails, the entire migration rolls back and no
+Slice-1 objects remain (fresh database) or the existing objects are
+unchanged (pre-existing database).
 """
 
 from __future__ import annotations
 
 import logging
 import sqlite3
+
+from agent_red_team.persistence.connection import utc_timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +39,6 @@ CREATE TABLE IF NOT EXISTS analysis_subjects (
     subject_type        TEXT NOT NULL,
     subject_path        TEXT NOT NULL,
     created_at          TEXT NOT NULL,
-
     UNIQUE(target_repository, subject_type, subject_path)
 );
 """
@@ -47,7 +52,6 @@ CREATE TABLE IF NOT EXISTS audit_runs (
     completed_at        TEXT,
     target_revision     TEXT NOT NULL,
     status              TEXT NOT NULL,
-
     UNIQUE(analysis_subject_id, request_id),
     FOREIGN KEY (analysis_subject_id) REFERENCES analysis_subjects(analysis_subject_id)
 );
@@ -64,7 +68,6 @@ CREATE TABLE IF NOT EXISTS audit_events (
     timestamp       TEXT    NOT NULL,
     payload         TEXT    NOT NULL,
     payload_hash    TEXT    NOT NULL,
-
     FOREIGN KEY (audit_run_id) REFERENCES audit_runs(audit_run_id)
 );
 """
@@ -79,7 +82,6 @@ CREATE TABLE IF NOT EXISTS run_state (
     findings_count  INTEGER DEFAULT 0,
     error_message   TEXT,
     updated_at      TEXT    NOT NULL,
-
     FOREIGN KEY (audit_run_id) REFERENCES audit_runs(audit_run_id)
 );
 """
@@ -93,26 +95,19 @@ CREATE TABLE IF NOT EXISTS idempotency_records (
     result_reference TEXT NOT NULL,
     created_at       TEXT NOT NULL,
     completed_at     TEXT NOT NULL,
-
     PRIMARY KEY(operation_type, idempotency_key)
 );
 """
 
-# ---------------------------------------------------------------------------
-# Indexes
-# ---------------------------------------------------------------------------
-
 _CREATE_INDEX_EVENTS_RUN = """
-CREATE INDEX IF NOT EXISTS idx_audit_events_run
-ON audit_events(audit_run_id);
+CREATE INDEX idx_audit_events_run ON audit_events(audit_run_id);
 """
 
 _CREATE_INDEX_EVENTS_CORRELATION = """
-CREATE INDEX IF NOT EXISTS idx_audit_events_correlation
-ON audit_events(correlation_id);
+CREATE INDEX idx_audit_events_correlation ON audit_events(correlation_id);
 """
 
-# Ordered sequence — dependencies require this order.
+# Ordered — dependencies require this sequence.
 _STATEMENTS: list[tuple[str, str]] = [
     ("schema_migrations", _CREATE_SCHEMA_MIGRATIONS),
     ("analysis_subjects", _CREATE_ANALYSIS_SUBJECTS),
@@ -124,50 +119,58 @@ _STATEMENTS: list[tuple[str, str]] = [
     ("idx_audit_events_correlation", _CREATE_INDEX_EVENTS_CORRELATION),
 ]
 
+# Tables only (no indexes) — for T-18 partial-failure checks.
+_TABLE_NAMES = [
+    "schema_migrations",
+    "analysis_subjects",
+    "audit_runs",
+    "audit_events",
+    "run_state",
+    "idempotency_records",
+]
+_INDEX_NAMES = ["idx_audit_events_run", "idx_audit_events_correlation"]
+
 
 def apply(conn: sqlite3.Connection) -> None:
-    """Apply migration version 1 inside a single transaction.
+    """Apply migration version 1 inside ``BEGIN IMMEDIATE … COMMIT``.
 
     Idempotent — safe to call on an already-migrated database.
-    The migration row is inserted only after all DDL succeeds.
 
-    SQLite DDL statements auto-commit any pending transaction.  This means
-    individual CREATE TABLE statements cannot be rolled back.  The module
-    mitigates this by using ``IF NOT EXISTS`` on every DDL statement,
-    making re-application safe even after partial failures.
+    On any failure the transaction is rolled back.  For a fresh database
+    this means no Slice-1 objects remain.  For a pre-existing database the
+    pre-existing objects are unchanged.
     """
-    # Create schema_migrations first so we can check for existing version.
-    conn.execute(_CREATE_SCHEMA_MIGRATIONS)
+    # Fast idempotency check — requires schema_migrations table.
+    try:
+        cur = conn.execute(
+            "SELECT 1 FROM schema_migrations WHERE version = ?",
+            (_MIGRATION_VERSION,),
+        )
+        if cur.fetchone() is not None:
+            logger.debug("Migration v%d already applied — skipping",
+                         _MIGRATION_VERSION)
+            return
+    except sqlite3.OperationalError:
+        # schema_migrations table does not exist yet — proceed.
+        pass
 
-    cur = conn.execute(
-        "SELECT 1 FROM schema_migrations WHERE version = ?",
-        (_MIGRATION_VERSION,),
-    )
-    if cur.fetchone() is not None:
-        logger.debug("Migration v%d already applied — skipping", _MIGRATION_VERSION)
-        return
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        for _name, ddl in _STATEMENTS:
+            conn.execute(ddl)
 
-    # Execute all remaining DDL (each uses IF NOT EXISTS).
-    for _name, ddl in _STATEMENTS:
-        conn.execute(ddl)
-
-    # The INSERT is the only DML — commit explicitly.
-    conn.execute(
-        "INSERT INTO schema_migrations (version, name, applied_at) "
-        "VALUES (?, ?, ?)",
-        (
-            _MIGRATION_VERSION,
-            "slice-1-persistence-foundation",
-            _utcnow(),
-        ),
-    )
-    conn.commit()
+        conn.execute(
+            "INSERT INTO schema_migrations (version, name, applied_at) "
+            "VALUES (?, ?, ?)",
+            (
+                _MIGRATION_VERSION,
+                "slice-1-persistence-foundation",
+                utc_timestamp(),
+            ),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
 
     logger.info("Migration v%d applied successfully", _MIGRATION_VERSION)
-
-
-def _utcnow() -> str:
-    """Return the current UTC timestamp in ISO 8601 format."""
-    from datetime import datetime, timezone
-
-    return datetime.now(timezone.utc).isoformat()
