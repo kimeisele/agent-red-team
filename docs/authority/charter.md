@@ -1,14 +1,14 @@
-# Agent Template Charter
+# Agent Red Team Charter
 
-> Agent Template — a federation node
+> Federation security-audit node that inspects peer repositories for exploitable weaknesses, unsafe code patterns, governance gaps, and architectural risks, then produces evidence-backed remediation reports.
 
 ## Role
 
-This node operates as a **Relay Node** in the agent-internet federation.
+This node operates as a **Research Faculty** in the agent-internet federation.
 
 ## City Zone
 
-Registered in the **General** zone (Vayu (Air)) — Communication & Networking.
+Registered in the **Research** zone (Jala (Water)) — Knowledge & Philosophy.
 
 ## Federation Commitment
 
