@@ -1,0 +1,84 @@
+{
+  "artifact_paths": {
+    "canonical_surface": ".authority-exports/canonical-surface.json",
+    "public_summary_registry": ".authority-exports/public-summary-registry.json",
+    "source_surface_registry": ".authority-exports/source-surface-registry.json",
+    "surface_metadata": ".authority-exports/surface-metadata.json"
+  },
+  "authority_exports": [
+    {
+      "artifact_uri": ".authority-exports/canonical-surface.json",
+      "content_sha256": "68cbc48ba1caa960ca7a5a4a4008ae415021a6e0bd46b80a4003563571d2b090",
+      "contract_version": 1,
+      "export_id": "agent-red-team/canonical_surface",
+      "export_kind": "canonical_surface",
+      "generated_at": 0.0,
+      "labels": {
+        "source_sha": "7b4f2dc16d2d225c4dfd4c1a1beaec62bc81ceab"
+      },
+      "repo_id": "agent-red-team",
+      "version": "7b4f2dc16d2d225c4dfd4c1a1beaec62bc81ceab"
+    },
+    {
+      "artifact_uri": ".authority-exports/public-summary-registry.json",
+      "content_sha256": "dd6da5fd7e5fcf6a077a35cae1c4e90b5f4ce2f8d85ce1ade80b4d706ebb6098",
+      "contract_version": 1,
+      "export_id": "agent-red-team/public_summary_registry",
+      "export_kind": "public_summary_registry",
+      "generated_at": 0.0,
+      "labels": {
+        "source_sha": "7b4f2dc16d2d225c4dfd4c1a1beaec62bc81ceab"
+      },
+      "repo_id": "agent-red-team",
+      "version": "7b4f2dc16d2d225c4dfd4c1a1beaec62bc81ceab"
+    },
+    {
+      "artifact_uri": ".authority-exports/source-surface-registry.json",
+      "content_sha256": "aa4fc82daf68c8654af6e85052f0eab02606c13dbdb6462c289047491b1a72b5",
+      "contract_version": 1,
+      "export_id": "agent-red-team/source_surface_registry",
+      "export_kind": "source_surface_registry",
+      "generated_at": 0.0,
+      "labels": {
+        "source_sha": "7b4f2dc16d2d225c4dfd4c1a1beaec62bc81ceab"
+      },
+      "repo_id": "agent-red-team",
+      "version": "7b4f2dc16d2d225c4dfd4c1a1beaec62bc81ceab"
+    },
+    {
+      "artifact_uri": ".authority-exports/surface-metadata.json",
+      "content_sha256": "548a382f6a22ec9d362eacf2a8c7e452b96c43dec0a1cc56af2fe116c531ec03",
+      "contract_version": 1,
+      "export_id": "agent-red-team/surface_metadata",
+      "export_kind": "surface_metadata",
+      "generated_at": 0.0,
+      "labels": {
+        "source_sha": "7b4f2dc16d2d225c4dfd4c1a1beaec62bc81ceab"
+      },
+      "repo_id": "agent-red-team",
+      "version": "7b4f2dc16d2d225c4dfd4c1a1beaec62bc81ceab"
+    }
+  ],
+  "contract_version": 1,
+  "generated_at": 0.0,
+  "kind": "source_authority_bundle",
+  "repo_role": {
+    "consumes": [],
+    "exports": [
+      "canonical_surface",
+      "public_summary_registry",
+      "source_surface_registry",
+      "surface_metadata"
+    ],
+    "labels": {
+      "display_name": "Agent Red Team"
+    },
+    "owner_boundary": "agent_red_team_surface",
+    "publication_targets": [
+      "agent-red-team-public-wiki"
+    ],
+    "repo_id": "agent-red-team",
+    "role": "normative_source"
+  },
+  "source_sha": "7b4f2dc16d2d225c4dfd4c1a1beaec62bc81ceab"
+}
