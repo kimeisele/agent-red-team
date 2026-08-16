@@ -1,0 +1,30 @@
+{
+  "artifacts": {
+    ".authority-exports/canonical-surface.json": {
+      "path": "bundles/55382e096fc7911467648da2c6f70f514da6277e/.authority-exports/canonical-surface.json",
+      "sha256": "b76380932a44f58a8e1a96db813d57fef7ce709f30d194dedc05b6d0b0b7ad74"
+    },
+    ".authority-exports/public-summary-registry.json": {
+      "path": "bundles/55382e096fc7911467648da2c6f70f514da6277e/.authority-exports/public-summary-registry.json",
+      "sha256": "fee26ad6585b332e848ceb7b968bf9be81a97c481b364c8668ed6b6e621b3ae3"
+    },
+    ".authority-exports/source-surface-registry.json": {
+      "path": "bundles/55382e096fc7911467648da2c6f70f514da6277e/.authority-exports/source-surface-registry.json",
+      "sha256": "58597e54f5e07bddae7ec8e21712af1dc174722babd11df56875ca6a950faecd"
+    },
+    ".authority-exports/surface-metadata.json": {
+      "path": "bundles/55382e096fc7911467648da2c6f70f514da6277e/.authority-exports/surface-metadata.json",
+      "sha256": "330487f9631cb1f00bda80c9d3c70d42cc0fdd622388c8ee3f88f46469407f04"
+    }
+  },
+  "bundle": {
+    "kind": "source_authority_bundle",
+    "path": "bundles/55382e096fc7911467648da2c6f70f514da6277e/source-authority-bundle.json",
+    "sha256": "dfcc4482c8c915a3f72c623d83194b2da70409a9c7d38dcfe1f70e4e74bcca7a"
+  },
+  "contract_version": 1,
+  "generated_at": 0.0,
+  "kind": "source_authority_feed_manifest",
+  "source_repo_id": "agent-red-team",
+  "source_sha": "55382e096fc7911467648da2c6f70f514da6277e"
+}
